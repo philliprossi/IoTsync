@@ -8,7 +8,7 @@ import requests
 from urllib.parse import urljoin
 from datetime import datetime
 from dotenv import load_dotenv
-from backend.config import Config
+from config import Config
 
 # Load environment variables
 load_dotenv()

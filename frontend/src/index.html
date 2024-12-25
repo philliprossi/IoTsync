@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://localhost:8000; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
     <title>Temperature Monitor</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Chart.js for simple charts -->
@@ -17,8 +18,8 @@
             <div class="current-temp">
                 <h2>Current Temperature</h2>
                 <div class="temp-display">
-                    <span id="currentTempC">--</span>°C
-                    <span id="currentTempF">--</span>°F
+                    <div class="temp-line"><span id="currentTempC">--</span>°C</div>
+                    <div class="temp-line"><span id="currentTempF">--</span>°F</div>
                 </div>
             </div>
         </div>
@@ -31,15 +32,15 @@
             </div>
             <div class="stat">
                 <h3>Alert Threshold</h3>
-                <p><span id="alertThreshold">--</span>°C</p>
+                <p><span id="alertThreshold">--</span>°F</p>
             </div>
             <div class="stat">
                 <h3>24h Min Temperature</h3>
-                <p><span id="minTemp">--</span>°C</p>
+                <p><span id="minTemp">--</span>°F</p>
             </div>
             <div class="stat">
                 <h3>24h Max Temperature</h3>
-                <p><span id="maxTemp">--</span>°C</p>
+                <p><span id="maxTemp">--</span>°F</p>
             </div>
         </div>
 

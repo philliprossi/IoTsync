@@ -3,11 +3,11 @@ import schedule
 import random
 import logging
 from datetime import datetime
-from backend.tuya_device_data import TuyaClient
-from backend.db_handler import DatabaseHandler
+from tuya_device_data import TuyaClient
+from db_handler import DatabaseHandler
 from pathlib import Path
-from backend.alert_manager import AlertManager
-from backend.config import Config
+from alert_manager import AlertManager
+from config import Config
 
 class DataCollector:
     def __init__(self):

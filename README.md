@@ -62,7 +62,7 @@ IoTsync/
 │   ├── tuya_device_data.py
 │   └── requirements.txt
 ├── frontend/
-│   └���─ src/
+│   └─ src/
 │       ├── index.html  # Main dashboard page
 │       ├── styles.css  # Dashboard styling
 │       └── app.js      # Dashboard functionality
@@ -106,12 +106,69 @@ cp .env_example .env
 
 3. Edit `.env` and add your credentials
 
-4. Start the services:
+4. Choose your installation method:
+
+### Option A: Using Docker
+
+Start the services:
 ```bash
 docker-compose up -d
 ```
 
-5. Access the dashboard:
+Access the dashboard:
+- Open http://localhost:3000 in your browser
+
+### Option B: Local Development with UV
+
+1. Install UV package manager:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+2. Create and activate a virtual environment in the project root:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. Install dependencies using UV:
+```bash
+# Install backend dependencies from project root
+cd backend
+uv pip install -r requirements.txt
+cd ..
+```
+
+4. Create necessary directories:
+```bash
+# From project root
+mkdir -p backend/data backend/logs
+```
+
+5. Start the backend server (in a terminal):
+```bash
+# From project root
+source venv/bin/activate
+cd backend
+uvicorn api:app --reload --port 8000
+```
+
+6. Start the data collector (in a new terminal):
+```bash
+# From project root
+source venv/bin/activate
+cd backend
+python3 data_collector.py
+```
+
+7. Start the frontend (in a new terminal):
+```bash
+# From project root
+cd frontend/src
+python3 -m http.server 3000 --bind 0.0.0.0
+```
+
+Access the dashboard:
 - Open http://localhost:3000 in your browser
 
 ## Development
@@ -124,14 +181,8 @@ The frontend is built with vanilla JavaScript, HTML, and CSS:
 
 To test the frontend locally:
 ```bash
-# Using Python's built-in server
 cd frontend/src
 python3 -m http.server 3000
-
-# Or using Node's http-server
-npm install -g http-server
-cd frontend/src
-http-server -p 3000
 ```
 
 Note: Make sure the backend is running at http://localhost:8000 for the API calls to work.
@@ -141,17 +192,74 @@ The backend is built with Python and FastAPI:
 ```bash
 # Create and activate virtual environment
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 
 # Install dependencies
 cd backend
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 
 # Start the development server
 uvicorn api:app --reload
 ```
 
 The API will be available at http://localhost:8000
+
+### Testing the API Endpoints
+
+Once the backend is running, you can test the API endpoints using curl:
+
+```bash
+# Get current temperature
+curl http://localhost:8000/api/temperature/current
+# Response:
+# {
+#   "temperature_c": 25.6,
+#   "temperature_f": 78.1,
+#   "timestamp": "2024-01-20T14:30:00"
+# }
+
+# Get temperature history
+# timerange options: day, week, month, year
+curl http://localhost:8000/api/temperature/history?timerange=day
+# Response:
+# [
+#   {
+#     "time": "2024-01-20T14:00:00",
+#     "temperature": 25.6,
+#     "temperature_f": 78.1
+#   },
+#   ...
+# ]
+
+# Get 24-hour temperature stats
+curl http://localhost:8000/api/temperature/stats
+# Response:
+# {
+#   "min_temperature": 75.2,
+#   "max_temperature": 82.4
+# }
+
+# Get recent temperature alerts
+curl http://localhost:8000/api/alerts/recent
+# Response:
+# [
+#   {
+#     "id": 1,
+#     "timestamp": "2024-01-20T14:25:00",
+#     "type": "triggered",
+#     "temperature": 98.6,
+#     "threshold": 101.0,
+#     "message": "Pool temperature is below minimum threshold..."
+#   },
+#   ...
+# ]
+```
+
+Available timerange options for temperature history:
+- `day`: 1-minute intervals for the last 24 hours
+- `week`: 1-hour intervals for the last 7 days
+- `month`: 1-hour intervals for the last 30 days
+- `year`: 1-day intervals for the last 365 days
 
 ### Setting up SendGrid
 
