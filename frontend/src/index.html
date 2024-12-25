@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temperature Monitor</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Chart.js for simple charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Temperature Monitoring Dashboard</h1>
+        
+        <!-- Current Temperature Card -->
+        <div class="card">
+            <div class="current-temp">
+                <h2>Current Temperature</h2>
+                <div class="temp-display">
+                    <span id="currentTempC">--</span>°C
+                    <span id="currentTempF">--</span>°F
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Card -->
+        <div class="card stats-grid">
+            <div class="stat">
+                <h3>Last Update</h3>
+                <p id="lastUpdate">--</p>
+            </div>
+            <div class="stat">
+                <h3>Alert Threshold</h3>
+                <p><span id="alertThreshold">--</span>°C</p>
+            </div>
+            <div class="stat">
+                <h3>24h Min Temperature</h3>
+                <p><span id="minTemp">--</span>°C</p>
+            </div>
+            <div class="stat">
+                <h3>24h Max Temperature</h3>
+                <p><span id="maxTemp">--</span>°C</p>
+            </div>
+        </div>
+
+        <!-- Temperature Chart -->
+        <div class="card">
+            <h2>Temperature Over Time</h2>
+            <div class="chart-controls">
+                <button class="active" data-range="day">Day</button>
+                <button data-range="week">Week</button>
+                <button data-range="month">Month</button>
+                <button data-range="year">Year</button>
+            </div>
+            <div class="chart-container">
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Alerts -->
+        <div class="card">
+            <h2>Recent Alerts</h2>
+            <div id="alertsList" class="alerts-grid"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html> 

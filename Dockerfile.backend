@@ -19,21 +19,20 @@ ENV PATH="/root/.local/bin:${PATH}"
 
 # Set working directory
 WORKDIR /app
+ENV PYTHONPATH=/app
 
 # Copy requirements first to leverage Docker cache
-COPY requirements.txt .
+COPY backend/requirements.txt backend/
+RUN uv pip install --system --no-cache -r backend/requirements.txt
 
-# Install Python dependencies using UV
-RUN uv pip install --system --no-cache -r requirements.txt
-
-# Copy application code
-COPY . .
+# Copy backend code
+COPY backend/ backend/
 
 # Create necessary directories
-RUN mkdir -p /app/logs /app/data /var/log/supervisor
+RUN mkdir -p /app/backend/logs /app/backend/data /var/log/supervisor
 
 # Set proper permissions
-RUN chmod -R 755 /app/logs /app/data
+RUN chmod -R 755 /app/backend/logs /app/backend/data
 
 # Copy supervisor configuration
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
