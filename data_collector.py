@@ -6,35 +6,34 @@ from datetime import datetime
 from tuya_device_data import TuyaClient
 from db_handler import DatabaseHandler
 from pathlib import Path
+from alert_manager import AlertManager
+from config import Config
 
 class DataCollector:
     def __init__(self):
         self.setup_logging()
         self.tuya_client = TuyaClient()
         self.db_handler = DatabaseHandler()
-        self.max_retries = 3
-        self.retry_delay = 5  # seconds
-        self.collection_interval = 55  # collect data every 55 seconds
+        self.alert_manager = AlertManager()
+        self.max_retries = Config.MAX_RETRIES
+        self.retry_delay = Config.RETRY_DELAY
+        self.collection_interval = Config.COLLECTION_INTERVAL
         self.logger = logging.getLogger('IoTsync')
 
     def setup_logging(self):
         # Create logs directory if it doesn't exist
-        log_dir = Path('/app/logs')
-        log_dir.mkdir(exist_ok=True)
+        Config.LOG_DIR.mkdir(exist_ok=True)
         
         # Configure logging
         logger = logging.getLogger('IoTsync')
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(getattr(logging, Config.LOG_LEVEL))
         
         # File handler for all logs
         file_handler = logging.FileHandler(
-            log_dir / f'iotsync_{datetime.now().strftime("%Y%m%d")}.log'
+            Config.LOG_DIR / f'iotsync_{datetime.now().strftime("%Y%m%d")}.log'
         )
-        file_handler.setLevel(logging.DEBUG)
-        file_format = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S.%f'
-        )
+        file_handler.setLevel(getattr(logging, Config.LOG_LEVEL))
+        file_format = logging.Formatter(Config.LOG_FORMAT, datefmt=Config.LOG_DATE_FORMAT)
         file_handler.setFormatter(file_format)
         logger.addHandler(file_handler)
         
@@ -68,6 +67,14 @@ class DataCollector:
                 
                 # Log detailed device status at debug level
                 self.logger.debug(f"Device status: {device_status}")
+                
+                # Get pool temperature after storing reading
+                properties = {prop['code']: prop['value'] for prop in device_status.get('properties', [])}
+                pool_temp_c = self.db_handler.format_temperature(properties.get('ToutCh3'))
+                if pool_temp_c is not None:
+                    pool_temp_f = self.db_handler.celsius_to_fahrenheit(pool_temp_c)
+                    # Check temperature and send alerts if needed
+                    self.alert_manager.check_temperature(pool_temp_f)
                 
                 return True
                 

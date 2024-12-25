@@ -13,12 +13,14 @@ A Python application that monitors and stores Tuya device data using the Tuya Io
 - Supervisor process management for reliability
 - Persistent data storage across container restarts
 - UV package manager for faster, more reliable dependency management
+- Automated email alerts for pool temperature monitoring via SendGrid
 
 ## Prerequisites
 
 - Tuya IoT Platform account and device credentials
 - Docker and Docker Compose (installation instructions below)
 - UV package manager (automatically installed in container)
+- SendGrid account for email alerts (free tier available)
 
 ### Installing Docker
 
@@ -49,7 +51,31 @@ VITE_TUYABASEURL=https://openapi.tuyaus.com
 VITE_ACCESSKEY=your_access_key
 VITE_SECRETKEY=your_secret_key
 DEVICE_ID=your_device_id
+
+# Email Alert Configuration
+SENDGRID_API_KEY=your-sendgrid-api-key
+SENDGRID_FROM_EMAIL=your-verified-sender@yourdomain.com
+ALERT_EMAIL=recipient@email.com
 ```
+
+### Setting up SendGrid
+
+1. Create a SendGrid account:
+   - Visit [SendGrid.com](https://sendgrid.com/)
+   - Sign up for a free account (100 emails/day free)
+
+2. Create an API key:
+   - Go to Settings → API Keys
+   - Click "Create API Key"
+   - Choose "Restricted Access"
+   - Enable "Mail Send" permissions
+   - Copy the generated API key to your `.env` file
+
+3. Verify your sender email:
+   - Go to Settings → Sender Authentication
+   - Choose Domain Authentication or Single Sender Verification
+   - Follow the verification steps
+   - Add the verified email to SENDGRID_FROM_EMAIL in `.env`
 
 ## Usage
 
@@ -92,6 +118,23 @@ docker-compose down
 ```bash
 git pull
 docker-compose up -d --build
+```
+
+## Features in Detail
+
+### Temperature Alerts
+
+The system monitors pool temperature and sends alerts:
+- When temperature falls below 101°F (configurable)
+- When temperature returns to normal
+- Alerts are sent no more frequently than every 30 minutes
+- Alerts include current temperature and threshold information
+
+Configure alert settings in `.env`:
+```env
+# Optional Alert Overrides
+ALERT_MIN_POOL_TEMP_F=101.0  # Minimum temperature threshold
+ALERT_INTERVAL=30            # Minutes between alerts
 ```
 
 ## Data Structure
@@ -172,3 +215,10 @@ IoTsync/
    - Check permissions on the data directory
    - Verify SQLite database file exists and is writable
    - Review error logs for database-specific issues
+
+5. Email Alert Issues:
+   - Verify SendGrid API key is correct
+   - Ensure sender email is verified with SendGrid
+   - Check logs for email sending errors
+   - Verify recipient email address is correct
+   - Test SendGrid configuration in their web interface

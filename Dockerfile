@@ -14,6 +14,9 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # Install UV
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
+# Add UV to PATH
+ENV PATH="/root/.local/bin:${PATH}"
+
 # Set working directory
 WORKDIR /app
 
@@ -21,7 +24,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install Python dependencies using UV
-RUN /root/.cargo/bin/uv pip install --no-cache -r requirements.txt
+RUN uv pip install --system --no-cache -r requirements.txt
 
 # Copy application code
 COPY . .

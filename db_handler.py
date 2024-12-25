@@ -1,17 +1,11 @@
 import sqlite3
 from datetime import datetime
 from pathlib import Path
+from config import Config
 
 class DatabaseHandler:
     def __init__(self):
-        # Create data directory if it doesn't exist
-        data_dir = Path('/app/data')
-        data_dir.mkdir(exist_ok=True)
-        
-        # Use the data directory for the database file
-        self.db_path = data_dir / 'iotsync.db'
-        
-        # Initialize database
+        self.db_path = Config.DB_FILE
         self.init_db()
 
     def init_db(self):

@@ -8,16 +8,17 @@ import requests
 from urllib.parse import urljoin
 from datetime import datetime
 from dotenv import load_dotenv
+from config import Config
 
 # Load environment variables
 load_dotenv()
 
 class TuyaClient:
     def __init__(self):
-        self.base_url = os.getenv('VITE_TUYABASEURL', 'https://openapi.tuyaus.com').rstrip('/') + '/'
-        self.access_key = os.getenv('VITE_ACCESSKEY')
-        self.secret_key = os.getenv('VITE_SECRETKEY')
-        self.device_id = os.getenv('DEVICE_ID')
+        self.base_url = Config.TUYA_BASE_URL
+        self.access_key = Config.TUYA_ACCESS_KEY
+        self.secret_key = Config.TUYA_SECRET_KEY
+        self.device_id = Config.DEVICE_ID
         self.token_info = None
         self.logger = logging.getLogger('IoTsync.tuya')
 
