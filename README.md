@@ -129,6 +129,7 @@ The system monitors pool temperature and sends alerts:
 - When temperature returns to normal
 - Alerts are sent no more frequently than every 30 minutes
 - Alerts include current temperature and threshold information
+- All alerts and resolutions are logged to the database
 
 Configure alert settings in `.env`:
 ```env
@@ -136,6 +137,19 @@ Configure alert settings in `.env`:
 ALERT_MIN_POOL_TEMP_F=101.0  # Minimum temperature threshold
 ALERT_INTERVAL=30            # Minutes between alerts
 ```
+
+Alert logs are stored in the database with the following schema:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER | Primary key |
+| timestamp | DATETIME | Time of alert |
+| alert_type | TEXT | 'triggered' or 'resolved' |
+| temperature_f | REAL | Temperature when alert occurred |
+| threshold_f | REAL | Temperature threshold |
+| email_sent | BOOLEAN | Whether email was sent successfully |
+| email_recipient | TEXT | Email recipient |
+| message | TEXT | Alert message content |
 
 ## Data Structure
 

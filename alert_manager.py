@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email, To, Content
+from db_handler import DatabaseHandler
 
 class AlertManager:
     def __init__(self):
@@ -17,6 +18,9 @@ class AlertManager:
         self.from_email = Config.SENDGRID_FROM_EMAIL
         self.alert_recipient = Config.ALERT_EMAIL
         
+        # Database handler
+        self.db_handler = DatabaseHandler()
+        
         if not all([self.sendgrid_api_key, self.from_email]):
             self.logger.warning("SendGrid credentials not configured. Alerts will be logged only.")
     
@@ -28,9 +32,10 @@ class AlertManager:
     
     def send_email(self, subject, body):
         """Send an email alert using SendGrid."""
+        email_sent = False
         if not all([self.sendgrid_api_key, self.from_email]):
             self.logger.info(f"Would send email: {subject}\n{body}")
-            return
+            return email_sent
             
         try:
             message = Mail(
@@ -46,11 +51,14 @@ class AlertManager:
             if response.status_code in (200, 201, 202):
                 self.logger.info(f"Alert email sent: {subject}")
                 self.last_alert_time = datetime.now()
+                email_sent = True
             else:
                 self.logger.error(f"SendGrid API returned status code: {response.status_code}")
             
         except Exception as e:
             self.logger.error(f"Failed to send alert email: {e}", exc_info=True)
+        
+        return email_sent
     
     def check_temperature(self, pool_temp_f):
         """Check pool temperature and send alerts if needed."""
@@ -65,8 +73,19 @@ class AlertManager:
                        f"Current temperature: {pool_temp_f}°F\n"
                        f"Minimum threshold: {self.min_pool_temp_f}°F\n"
                        f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-                self.send_email(subject, body)
+                
+                email_sent = self.send_email(subject, body)
                 self.alert_active = True
+                
+                # Log alert to database
+                self.db_handler.log_alert(
+                    alert_type='triggered',
+                    temperature_f=pool_temp_f,
+                    threshold_f=self.min_pool_temp_f,
+                    email_sent=email_sent,
+                    email_recipient=self.alert_recipient,
+                    message=body
+                )
                 
         elif self.alert_active:
             # Temperature has returned to normal
@@ -75,5 +94,16 @@ class AlertManager:
                    f"Current temperature: {pool_temp_f}°F\n"
                    f"Minimum threshold: {self.min_pool_temp_f}°F\n"
                    f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-            self.send_email(subject, body)
-            self.alert_active = False 
+            
+            email_sent = self.send_email(subject, body)
+            self.alert_active = False
+            
+            # Log resolution to database
+            self.db_handler.log_alert(
+                alert_type='resolved',
+                temperature_f=pool_temp_f,
+                threshold_f=self.min_pool_temp_f,
+                email_sent=email_sent,
+                email_recipient=self.alert_recipient,
+                message=body
+            ) 

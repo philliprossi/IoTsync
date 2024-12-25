@@ -33,6 +33,20 @@ class DatabaseHandler:
                     pressure_units TEXT
                 )
             ''')
+            
+            # New alerts table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS temperature_alerts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp DATETIME NOT NULL,
+                    alert_type TEXT NOT NULL,  -- 'triggered' or 'resolved'
+                    temperature_f REAL NOT NULL,
+                    threshold_f REAL NOT NULL,
+                    email_sent BOOLEAN NOT NULL,
+                    email_recipient TEXT,
+                    message TEXT
+                )
+            ''')
             conn.commit()
 
     def celsius_to_fahrenheit(self, celsius):
@@ -79,5 +93,30 @@ class DatabaseHandler:
                 properties.get('HoutCh3'),
                 properties.get('atmosphere'),
                 properties.get('pressure_units')
+            ))
+            conn.commit() 
+
+    def log_alert(self, alert_type, temperature_f, threshold_f, email_sent, email_recipient, message):
+        """Log temperature alert to database."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO temperature_alerts (
+                    timestamp,
+                    alert_type,
+                    temperature_f,
+                    threshold_f,
+                    email_sent,
+                    email_recipient,
+                    message
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                datetime.now().isoformat(),
+                alert_type,
+                temperature_f,
+                threshold_f,
+                email_sent,
+                email_recipient,
+                message
             ))
             conn.commit() 
