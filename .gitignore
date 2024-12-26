@@ -172,7 +172,6 @@ cython_debug/
 temperature_data.db
 
 backend/logs/
-backend/data/
 .env
 __pycache__/
 *.pyc
@@ -192,5 +191,3 @@ frontend/.env.production.local
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
-
-data/
