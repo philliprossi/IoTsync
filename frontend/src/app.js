@@ -167,18 +167,24 @@ function updateCurrentTemperature(data) {
     document.getElementById('currentTempC').textContent = data.temperature_c.toFixed(1);
     document.getElementById('currentTempF').textContent = data.temperature_f.toFixed(1);
     
-    // Convert UTC to EST
+    // Convert UTC to EST and format as YYYY-MM-DD HH:MM AM/PM
     const utcDate = new Date(data.timestamp + 'Z'); // Ensure UTC parsing by adding 'Z'
-    document.getElementById('lastUpdate').textContent = utcDate.toLocaleString('en-US', {
+    const formattedDate = utcDate.toLocaleString('en-US', {
         timeZone: 'America/New_York',
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit',
         hour12: true
     });
+    
+    // Convert MM/DD/YYYY to YYYY-MM-DD format
+    const [date, time] = formattedDate.split(', ');
+    const [month, day, year] = date.split('/');
+    const formattedString = `${year}-${month}-${day}, ${time}`;
+    
+    document.getElementById('lastUpdate').textContent = formattedString;
 }
 
 function updateStats(data) {
