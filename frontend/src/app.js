@@ -89,6 +89,7 @@ function updateStats(data) {
 
 function updateChart(data) {
     const ctx = document.getElementById('tempChart').getContext('2d');
+    const alertThreshold = parseFloat(document.getElementById('alertThreshold').textContent);
     
     if (chart) {
         chart.destroy();
@@ -120,6 +121,31 @@ function updateChart(data) {
             plugins: {
                 legend: {
                     display: false
+                },
+                annotation: {
+                    annotations: {
+                        alertLine: {
+                            type: 'line',
+                            yMin: alertThreshold,
+                            yMax: alertThreshold,
+                            borderColor: 'rgba(255, 0, 0, 0.7)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            label: {
+                                display: true,
+                                content: 'Alert Threshold',
+                                position: 'end',
+                                backgroundColor: 'rgba(255, 0, 0, 0.7)',
+                                color: 'white',
+                                padding: 4
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false
                 }
             }
         }

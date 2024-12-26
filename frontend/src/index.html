@@ -6,8 +6,13 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://localhost:8000 http://backend:8000; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
     <title>Temperature Monitor</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Chart.js for simple charts -->
+    <!-- Chart.js and plugins -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <script>
+        // Register the annotation plugin
+        Chart.register(ChartAnnotation);
+    </script>
 </head>
 <body>
     <div class="container">
