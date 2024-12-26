@@ -13,8 +13,6 @@ const fetchOptions = {
 
 async function fetchWithDebug(url, options) {
     console.log(`Fetching ${url}...`);
-    console.log('API Base URL:', API_BASE_URL);
-    console.log('Full URL:', url);
     console.log('Fetch options:', JSON.stringify(options, null, 2));
     
     try {
@@ -44,8 +42,8 @@ async function fetchData() {
     console.log('Starting data fetch...');
     try {
         const [current, stats] = await Promise.all([
-            fetchWithDebug(`${API_BASE_URL}/api/temperature/current`, fetchOptions),
-            fetchWithDebug(`${API_BASE_URL}/api/temperature/stats`, fetchOptions)
+            fetchWithDebug(`${API_BASE_URL}/temperature/current`, fetchOptions),
+            fetchWithDebug(`${API_BASE_URL}/temperature/stats`, fetchOptions)
         ]);
 
         console.log('Current data fetched successfully');
@@ -85,28 +83,29 @@ async function fetchData() {
 
 async function fetchChartData(range = 'day') {
     try {
-        const [history, alerts] = await Promise.all([
-            fetchWithDebug(`${API_BASE_URL}/api/temperature/history?timerange=${range}`, fetchOptions),
-            fetchWithDebug(`${API_BASE_URL}/api/alerts/recent`, fetchOptions)
+        const [history, alerts, stats] = await Promise.all([
+            fetchWithDebug(`${API_BASE_URL}/temperature/history?timerange=${range}`, fetchOptions),
+            fetchWithDebug(`${API_BASE_URL}/alerts/recent`, fetchOptions),
+            fetchWithDebug(`${API_BASE_URL}/temperature/stats`, fetchOptions)
         ]);
         
         console.log('Chart data fetched successfully');
-        initializeChart(history);
+        initializeChart(history, stats.alert_threshold);
         updateAlerts(alerts);
+        updateStats(stats);
     } catch (error) {
         console.error(`Error fetching history for range ${range}:`, error);
     }
 }
 
-function initializeChart(data) {
+function initializeChart(data, alertThreshold) {
     const ctx = document.getElementById('tempChart').getContext('2d');
-    const alertThreshold = parseFloat(document.getElementById('alertThreshold').textContent);
     
     if (chart) {
         chart.destroy();
     }
 
-    chart = new Chart(ctx, {
+    const chartConfig = {
         type: 'line',
         data: {
             labels: data.map(d => {
@@ -160,7 +159,9 @@ function initializeChart(data) {
                 }
             }
         }
-    });
+    };
+
+    chart = new Chart(ctx, chartConfig);
 }
 
 function updateCurrentTemperature(data) {

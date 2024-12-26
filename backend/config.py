@@ -11,6 +11,10 @@ class Config:
     DATA_DIR = BASE_DIR / 'data'
     LOG_DIR = BASE_DIR / 'logs'
     
+    # Server Configuration
+    API_PORT = int(os.getenv('API_PORT', '8000'))
+    FRONTEND_PORT = int(os.getenv('FRONTEND_PORT', '3000'))
+    
     # Ensure directories exist
     DATA_DIR.mkdir(exist_ok=True)
     LOG_DIR.mkdir(exist_ok=True)

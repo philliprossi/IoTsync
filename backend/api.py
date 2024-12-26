@@ -16,14 +16,16 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "http://[::1]:3000",  # IPv6 localhost
+    "http://localhost:3001",
+    "http://0.0.0.0:3001",
+    "http://frontend",
 ]
 
 logger.info(f"Configuring CORS with origins: {origins}")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # More permissive during development
+    allow_origins=origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
