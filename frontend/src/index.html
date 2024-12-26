@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://localhost:8000 http://backend:8000; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+    <title>Temperature Monitor</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Chart.js and plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <script>
+        // Register the annotation plugin
+        Chart.register(ChartAnnotation);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Temperature Monitoring Dashboard</h2>
+        
+        <!-- Current Temperature Card -->
+        <div class="card">
+            <div class="current-temp">
+                <h2>Current Temperature</h2>
+                <div class="temp-display">
+                    <div class="temp-line"><span id="currentTempF">--</span>°F</div>
+                    <div class="temp-line"><span id="currentTempC">--</span>°C</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Card -->
+        <div class="card stats-grid">
+            <div class="stat">
+                <h3>Last Update</h3>
+                <p id="lastUpdate">--</p>
+            </div>
+            <div class="stat">
+                <h3>Alert Threshold</h3>
+                <p><span id="alertThreshold">--</span>°F</p>
+            </div>
+            <div class="stat">
+                <h3>24h Min Temp</h3>
+                <p><span id="minTemp">--</span>°F</p>
+            </div>
+            <div class="stat">
+                <h3>24h Max Temp</h3>
+                <p><span id="maxTemp">--</span>°F</p>
+            </div>
+        </div>
+
+        <!-- Temperature Chart -->
+        <div class="card">
+            <h2>Temperature Over Time</h2>
+            <div class="chart-controls">
+                <button class="active" data-range="day">Day</button>
+                <button data-range="week">Week</button>
+                <button data-range="month">Month</button>
+                <button data-range="year">Year</button>
+            </div>
+            <div class="chart-container">
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Alerts -->
+        <div class="card">
+            <h2>Recent Alerts</h2>
+            <div id="alertsList" class="alerts-grid"></div>
+        </div>
+    </div>
+
+    <script src="env.js"></script>
+    <script src="app.js"></script>
+</body>
+</html> 

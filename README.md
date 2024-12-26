@@ -1,6 +1,6 @@
 # IoTsync
 
-A Python application that monitors and stores Tuya device data using the Tuya IoT Platform API. This application collects temperature and humidity data from multiple sensors and stores it in a SQLite database for historical tracking.
+A Python application that monitors and stores Tuya device data using the Tuya IoT Platform API. This application collects temperature and humidity data from multiple sensors and stores it in a SQLite database for historical tracking. This was primarily developed to add alerting to the Raddy PT-3 Wi-Fi Pool Thermometer [link](https://iraddy.com/products/pt-3).
 
 ## Features
 
@@ -14,6 +14,14 @@ A Python application that monitors and stores Tuya device data using the Tuya Io
 - Persistent data storage across container restarts
 - UV package manager for faster, more reliable dependency management
 - Automated email alerts for pool temperature monitoring via SendGrid
+- Web dashboard featuring:
+  - Real-time temperature display in both °C and °F
+  - Historical temperature charts with day/week/month/year views
+  - Alert monitoring with temperature thresholds
+  - Responsive design for mobile and desktop
+  - Automatic timezone conversion to EST
+- Historical temperature data visualization
+- Real-time updates every minute
 
 ## Prerequisites
 
@@ -31,6 +39,64 @@ A Python application that monitors and stores Tuya device data using the Tuya Io
 4. Open Docker Desktop from your Applications folder or Spotlight
 5. Wait for Docker to start (whale icon in menu bar will stop animating)
 
+## API Endpoints
+
+The backend provides the following REST API endpoints:
+
+- `GET /` - Health check endpoint
+- `GET /api/temperature/current` - Get current temperature
+- `GET /api/temperature/history?timerange={day|week|month|year}` - Get temperature history
+- `GET /api/temperature/stats` - Get min/max temperature stats and alert threshold
+- `GET /api/alerts/recent` - Get recent temperature alerts
+
+## Project Structure
+
+```
+IoTsync/
+├── backend/
+│   ├── data/           # SQLite database storage (persisted)
+│   ├── logs/           # Application logs (persisted)
+│   ├── api.py          # FastAPI backend server
+│   ├── alert_manager.py
+│   ├── config.py
+│   ├── data_collector.py
+│   ├── db_handler.py
+│   ├── tuya_device_data.py
+│   └── requirements.txt
+├── frontend/
+│   └─ src/
+│       ├── index.html  # Main dashboard page
+│       ├── styles.css  # Dashboard styling
+│       ├── app.js      # Dashboard functionality
+│       └── env.js      # Environment configuration
+├── docker-compose.yml  # Docker Compose configuration
+├── Dockerfile.backend  # Backend Docker image definition
+├── Dockerfile.frontend # Frontend Docker image definition
+├── supervisord.conf    # Supervisor process manager configuration
+└── .env               # Environment variables (not in repo)
+```
+
+## Frontend Features
+
+The dashboard provides:
+- Current temperature display in both Celsius and Fahrenheit
+- 24-hour temperature statistics
+- Interactive temperature chart with time range selection
+- Recent alerts display
+- Automatic updates every minute
+- EST timezone display
+- Responsive design for all screen sizes
+
+## Backend Features
+
+The backend handles:
+- Data collection from Tuya devices
+- Database management
+- Temperature alert monitoring
+- Email notifications via SendGrid
+- REST API for frontend data
+- Automatic timezone conversion
+- Error handling and logging
 
 ## Installation
 
@@ -45,18 +111,182 @@ cd <repo-directory>
 cp .env_example .env
 ```
 
-3. Edit `.env` and add your Tuya credentials:
+3. Edit `.env` and add your credentials:
 ```env
+# Required
 VITE_TUYABASEURL=https://openapi.tuyaus.com
-VITE_ACCESSKEY=your_access_key
-VITE_SECRETKEY=your_secret_key
+VITE_ACCESSKEY=your_tuya_access_key
+VITE_SECRETKEY=your_tuya_secret_key
+VITE_TUYAUSERID=your_tuya_user_id
 DEVICE_ID=your_device_id
 
-# Email Alert Configuration
-SENDGRID_API_KEY=your-sendgrid-api-key
-SENDGRID_FROM_EMAIL=your-verified-sender@yourdomain.com
-ALERT_EMAIL=recipient@email.com
+# Optional Email Alerts
+SENDGRID_API_KEY=your_sendgrid_api_key
+SENDGRID_FROM_EMAIL=your_verified_sender_email
+ALERT_EMAIL=recipient_email
 ```
+
+4. Choose your installation method:
+
+### Option A: Using Docker
+
+Start the services:
+```bash
+docker-compose up -d
+```
+
+Access the dashboard:
+- Open http://localhost:3000 in your browser
+
+### Option B: Local Development with UV
+
+1. Install UV package manager:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+2. Create and activate a virtual environment in the project root:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. Install dependencies using UV:
+```bash
+# Install backend dependencies from project root
+cd backend
+uv pip install -r requirements.txt
+cd ..
+```
+
+4. Create necessary directories:
+```bash
+# From project root
+mkdir -p backend/data backend/logs
+```
+
+5. Set up Python path and start the backend server (in a terminal):
+```bash
+# From project root
+source venv/bin/activate
+export PYTHONPATH=$PYTHONPATH:$(pwd)
+cd backend
+uvicorn api:app --reload --port 8000
+```
+
+6. Start the data collector (in a new terminal):
+```bash
+# From project root
+source venv/bin/activate
+export PYTHONPATH=$PYTHONPATH:$(pwd)
+cd backend
+python3 data_collector.py
+```
+
+7. Start the frontend (in a new terminal):
+```bash
+# From project root
+cd frontend/src
+python3 -m http.server 3000 --bind 0.0.0.0
+```
+
+Access the dashboard:
+- Open http://localhost:3000 in your browser
+
+## Development
+
+### Frontend Development
+The frontend is built with vanilla JavaScript, HTML, and CSS:
+- `index.html` - Main dashboard structure
+- `styles.css` - Dashboard styling
+- `app.js` - Dashboard functionality and API integration
+- `env.js` - Environment configuration
+
+To test the frontend locally:
+```bash
+cd frontend/src
+python3 -m http.server 3000
+```
+
+Note: Make sure the backend is running at http://localhost:8000 for the API calls to work.
+
+### Backend Development
+The backend is built with Python and FastAPI:
+```bash
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+cd backend
+uv pip install -r requirements.txt
+
+# Set Python path
+export PYTHONPATH=$PYTHONPATH:$(pwd)
+
+# Start the development server
+uvicorn api:app --reload
+```
+
+The API will be available at http://localhost:8000
+
+### Testing the API Endpoints
+
+Once the backend is running, you can test the API endpoints using curl:
+
+```bash
+# Health check
+curl http://localhost:8000/
+# Response: {"message":"API is running"}
+
+# Get current temperature
+curl http://localhost:8000/api/temperature/current
+# Response:
+# {
+#   "temperature_c": 25.6,
+#   "temperature_f": 78.1,
+#   "timestamp": "2024-01-20T14:30:00"
+# }
+
+# Get temperature history
+# timerange options: day, week, month, year
+curl http://localhost:8000/api/temperature/history?timerange=day
+# Response:
+# [
+#   {
+#     "time": "2024-01-20T14:00:00",
+#     "temperature": 25.6,
+#     "temperature_f": 78.1
+#   },
+#   ...
+# ]
+
+# Get 24-hour temperature stats
+curl http://localhost:8000/api/temperature/stats
+# Response:
+# {
+#   "min_temperature": 75.2,
+#   "max_temperature": 82.4,
+#   "alert_threshold": 101.0
+# }
+
+# Get recent temperature alerts
+curl http://localhost:8000/api/alerts/recent
+# Response:
+# [
+#   {
+#     "id": 1,
+#     "timestamp": "2024-01-20T14:25:00",
+#     "type": "triggered",
+#     "temperature": 98.6,
+#     "threshold": 101.0,
+#     "message": "Pool temperature is below minimum threshold..."
+#   },
+#   ...
+# ]
+```
+
+## Configuration
 
 ### Setting up SendGrid
 
@@ -176,22 +406,6 @@ The application stores data in a SQLite database (`data/iotsync.db`) with the fo
 | atmospheric_pressure | REAL | Atmospheric pressure |
 | pressure_units | TEXT | Units for pressure measurement |
 
-## Project Structure
-
-```
-IoTsync/
-├── data/                # SQLite database storage (persisted)
-├── logs/               # Application logs (persisted)
-├── Dockerfile          # Docker image definition
-├── docker-compose.yml  # Docker Compose configuration
-├── supervisord.conf    # Supervisor process manager configuration
-├── requirements.txt    # Python dependencies
-├── data_collector.py   # Main application script
-├── tuya_device_data.py # Tuya API client
-├── db_handler.py       # Database operations
-└── .env               # Environment variables (not in repo)
-```
-
 ## Troubleshooting
 
 1. Docker Issues:
@@ -200,9 +414,6 @@ IoTsync/
      # On macOS:
      # Open Docker Desktop application
      open -a Docker
-     
-     # On Linux:
-     sudo systemctl start docker
      
      # Verify Docker is running:
      docker info

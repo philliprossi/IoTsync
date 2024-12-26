@@ -18,22 +18,21 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:${PATH}"
 
 # Set working directory
-WORKDIR /app
+WORKDIR /app/backend
+ENV PYTHONPATH=/app/backend
 
 # Copy requirements first to leverage Docker cache
-COPY requirements.txt .
-
-# Install Python dependencies using UV
+COPY backend/requirements.txt .
 RUN uv pip install --system --no-cache -r requirements.txt
 
-# Copy application code
-COPY . .
+# Copy backend code
+COPY backend/ .
 
 # Create necessary directories
-RUN mkdir -p /app/logs /app/data /var/log/supervisor
+RUN mkdir -p logs data /var/log/supervisor
 
 # Set proper permissions
-RUN chmod -R 755 /app/logs /app/data
+RUN chmod -R 755 logs data
 
 # Copy supervisor configuration
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf

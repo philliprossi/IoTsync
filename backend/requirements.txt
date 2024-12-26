@@ -1,0 +1,11 @@
+requests
+python-dotenv
+schedule
+supervisor
+sendgrid
+fastapi
+uvicorn
+python-multipart
+sqlalchemy
+aiosqlite
+pydantic 
