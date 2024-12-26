@@ -48,8 +48,33 @@ body {
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.stat {
+    min-width: 0;
+}
+
+.stat h3 {
+    margin: 0 0 5px 0;
+    font-size: 1rem;
+}
+
+.stat p {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    
+    .stat {
+        padding: 10px;
+    }
 }
 
 .chart-controls {
