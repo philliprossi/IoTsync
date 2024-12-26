@@ -15,10 +15,11 @@ A Python application that monitors and stores Tuya device data using the Tuya Io
 - UV package manager for faster, more reliable dependency management
 - Automated email alerts for pool temperature monitoring via SendGrid
 - Web dashboard featuring:
-  - Real-time temperature display
-  - Historical temperature charts
-  - Alert monitoring
-  - Responsive design
+  - Real-time temperature display in both °C and °F
+  - Historical temperature charts with day/week/month/year views
+  - Alert monitoring with temperature thresholds
+  - Responsive design for mobile and desktop
+  - Automatic timezone conversion to EST
 - Historical temperature data visualization
 - Real-time updates every minute
 
@@ -42,9 +43,10 @@ A Python application that monitors and stores Tuya device data using the Tuya Io
 
 The backend provides the following REST API endpoints:
 
+- `GET /` - Health check endpoint
 - `GET /api/temperature/current` - Get current temperature
 - `GET /api/temperature/history?timerange={day|week|month|year}` - Get temperature history
-- `GET /api/temperature/stats` - Get min/max temperature stats
+- `GET /api/temperature/stats` - Get min/max temperature stats and alert threshold
 - `GET /api/alerts/recent` - Get recent temperature alerts
 
 ## Project Structure
@@ -65,7 +67,8 @@ IoTsync/
 │   └─ src/
 │       ├── index.html  # Main dashboard page
 │       ├── styles.css  # Dashboard styling
-│       └── app.js      # Dashboard functionality
+│       ├── app.js      # Dashboard functionality
+│       └── env.js      # Environment configuration
 ├── docker-compose.yml  # Docker Compose configuration
 ├── Dockerfile.backend  # Backend Docker image definition
 ├── Dockerfile.frontend # Frontend Docker image definition
@@ -81,6 +84,8 @@ The dashboard provides:
 - Interactive temperature chart with time range selection
 - Recent alerts display
 - Automatic updates every minute
+- EST timezone display
+- Responsive design for all screen sizes
 
 ## Backend Features
 
@@ -88,8 +93,10 @@ The backend handles:
 - Data collection from Tuya devices
 - Database management
 - Temperature alert monitoring
-- Email notifications
+- Email notifications via SendGrid
 - REST API for frontend data
+- Automatic timezone conversion
+- Error handling and logging
 
 ## Installation
 
@@ -104,7 +111,20 @@ cd <repo-directory>
 cp .env_example .env
 ```
 
-3. Edit `.env` and add your credentials
+3. Edit `.env` and add your credentials:
+```env
+# Required
+VITE_TUYABASEURL=https://openapi.tuyaus.com
+VITE_ACCESSKEY=your_tuya_access_key
+VITE_SECRETKEY=your_tuya_secret_key
+VITE_TUYAUSERID=your_tuya_user_id
+DEVICE_ID=your_device_id
+
+# Optional Email Alerts
+SENDGRID_API_KEY=your_sendgrid_api_key
+SENDGRID_FROM_EMAIL=your_verified_sender_email
+ALERT_EMAIL=recipient_email
+```
 
 4. Choose your installation method:
 
@@ -145,10 +165,11 @@ cd ..
 mkdir -p backend/data backend/logs
 ```
 
-5. Start the backend server (in a terminal):
+5. Set up Python path and start the backend server (in a terminal):
 ```bash
 # From project root
 source venv/bin/activate
+export PYTHONPATH=$PYTHONPATH:$(pwd)
 cd backend
 uvicorn api:app --reload --port 8000
 ```
@@ -157,6 +178,7 @@ uvicorn api:app --reload --port 8000
 ```bash
 # From project root
 source venv/bin/activate
+export PYTHONPATH=$PYTHONPATH:$(pwd)
 cd backend
 python3 data_collector.py
 ```
@@ -178,6 +200,7 @@ The frontend is built with vanilla JavaScript, HTML, and CSS:
 - `index.html` - Main dashboard structure
 - `styles.css` - Dashboard styling
 - `app.js` - Dashboard functionality and API integration
+- `env.js` - Environment configuration
 
 To test the frontend locally:
 ```bash
@@ -198,6 +221,9 @@ source venv/bin/activate
 cd backend
 uv pip install -r requirements.txt
 
+# Set Python path
+export PYTHONPATH=$PYTHONPATH:$(pwd)
+
 # Start the development server
 uvicorn api:app --reload
 ```
@@ -209,6 +235,10 @@ The API will be available at http://localhost:8000
 Once the backend is running, you can test the API endpoints using curl:
 
 ```bash
+# Health check
+curl http://localhost:8000/
+# Response: {"message":"API is running"}
+
 # Get current temperature
 curl http://localhost:8000/api/temperature/current
 # Response:
@@ -236,7 +266,8 @@ curl http://localhost:8000/api/temperature/stats
 # Response:
 # {
 #   "min_temperature": 75.2,
-#   "max_temperature": 82.4
+#   "max_temperature": 82.4,
+#   "alert_threshold": 101.0
 # }
 
 # Get recent temperature alerts
@@ -255,11 +286,7 @@ curl http://localhost:8000/api/alerts/recent
 # ]
 ```
 
-Available timerange options for temperature history:
-- `day`: 1-minute intervals for the last 24 hours
-- `week`: 1-hour intervals for the last 7 days
-- `month`: 1-hour intervals for the last 30 days
-- `year`: 1-day intervals for the last 365 days
+## Configuration
 
 ### Setting up SendGrid
 
@@ -387,7 +414,6 @@ The application stores data in a SQLite database (`data/iotsync.db`) with the fo
      # On macOS:
      # Open Docker Desktop application
      open -a Docker
-     
      
      # Verify Docker is running:
      docker info
