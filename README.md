@@ -1,6 +1,6 @@
 # IoTsync
 
-A Python application that monitors and stores Tuya device data using the Tuya IoT Platform API. This application collects temperature and humidity data from multiple sensors and stores it in a SQLite database for historical tracking.
+A Python application that monitors and stores Tuya device data using the Tuya IoT Platform API. This application collects temperature and humidity data from multiple sensors and stores it in a SQLite database for historical tracking. This was primarily developed to add alerting to the Raddy PT-3 Wi-Fi Pool Thermometer [link](https://iraddy.com/products/pt-3).
 
 ## Features
 
