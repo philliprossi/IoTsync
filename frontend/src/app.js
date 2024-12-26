@@ -106,10 +106,12 @@ function updateChart(data) {
                 });
             }),
             datasets: [{
-                label: 'Temperature (°C)',
-                data: data.map(d => d.temperature),
+                label: 'Temperature (°F)',
+                data: data.map(d => d.temperature_f),
                 borderColor: '#2563eb',
-                tension: 0.4
+                tension: 0.4,
+                pointRadius: 0,
+                borderWidth: 2
             }]
         },
         options: {
