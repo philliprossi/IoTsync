@@ -43,18 +43,38 @@ async function fetchWithDebug(url, options) {
 async function fetchData() {
     console.log('Starting data fetch...');
     try {
-        const [current, stats, history, alerts] = await Promise.all([
+        const [current, stats] = await Promise.all([
             fetchWithDebug(`${API_BASE_URL}/api/temperature/current`, fetchOptions),
-            fetchWithDebug(`${API_BASE_URL}/api/temperature/stats`, fetchOptions),
-            fetchWithDebug(`${API_BASE_URL}/api/temperature/history?timerange=day`, fetchOptions),
-            fetchWithDebug(`${API_BASE_URL}/api/alerts/recent`, fetchOptions)
+            fetchWithDebug(`${API_BASE_URL}/api/temperature/stats`, fetchOptions)
         ]);
 
-        console.log('All data fetched successfully');
+        console.log('Current data fetched successfully');
         updateCurrentTemperature(current);
         updateStats(stats);
-        updateChart(history);
-        updateAlerts(alerts);
+        
+        // Add new data point to chart if it exists
+        if (chart && current) {
+            const time = new Date(current.timestamp + 'Z').toLocaleTimeString('en-US', {
+                timeZone: 'America/New_York',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Only add if it's a new timestamp
+            const lastTimestamp = chart.data.labels[chart.data.labels.length - 1];
+            if (lastTimestamp !== time) {
+                chart.data.labels.push(time);
+                chart.data.datasets[0].data.push(current.temperature_f);
+                
+                // Remove oldest point if we have more than 24 hours of data (assuming 1-minute intervals)
+                if (chart.data.labels.length > 1440) {
+                    chart.data.labels.shift();
+                    chart.data.datasets[0].data.shift();
+                }
+                
+                chart.update('none'); // Update with minimal animation
+            }
+        }
     } catch (error) {
         console.error('Error in fetchData:', error);
         document.getElementById('currentTempC').textContent = 'Error';
@@ -63,31 +83,22 @@ async function fetchData() {
     }
 }
 
-function updateCurrentTemperature(data) {
-    document.getElementById('currentTempC').textContent = data.temperature_c.toFixed(1);
-    document.getElementById('currentTempF').textContent = data.temperature_f.toFixed(1);
-    
-    // Convert UTC to EST
-    const utcDate = new Date(data.timestamp + 'Z'); // Ensure UTC parsing by adding 'Z'
-    document.getElementById('lastUpdate').textContent = utcDate.toLocaleString('en-US', {
-        timeZone: 'America/New_York',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-    });
+async function fetchChartData(range = 'day') {
+    try {
+        const [history, alerts] = await Promise.all([
+            fetchWithDebug(`${API_BASE_URL}/api/temperature/history?timerange=${range}`, fetchOptions),
+            fetchWithDebug(`${API_BASE_URL}/api/alerts/recent`, fetchOptions)
+        ]);
+        
+        console.log('Chart data fetched successfully');
+        initializeChart(history);
+        updateAlerts(alerts);
+    } catch (error) {
+        console.error(`Error fetching history for range ${range}:`, error);
+    }
 }
 
-function updateStats(data) {
-    document.getElementById('minTemp').textContent = data.min_temperature.toFixed(1);
-    document.getElementById('maxTemp').textContent = data.max_temperature.toFixed(1);
-    document.getElementById('alertThreshold').textContent = data.alert_threshold.toFixed(1);
-}
-
-function updateChart(data) {
+function initializeChart(data) {
     const ctx = document.getElementById('tempChart').getContext('2d');
     const alertThreshold = parseFloat(document.getElementById('alertThreshold').textContent);
     
@@ -152,6 +163,30 @@ function updateChart(data) {
     });
 }
 
+function updateCurrentTemperature(data) {
+    document.getElementById('currentTempC').textContent = data.temperature_c.toFixed(1);
+    document.getElementById('currentTempF').textContent = data.temperature_f.toFixed(1);
+    
+    // Convert UTC to EST
+    const utcDate = new Date(data.timestamp + 'Z'); // Ensure UTC parsing by adding 'Z'
+    document.getElementById('lastUpdate').textContent = utcDate.toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
+}
+
+function updateStats(data) {
+    document.getElementById('minTemp').textContent = data.min_temperature.toFixed(1);
+    document.getElementById('maxTemp').textContent = data.max_temperature.toFixed(1);
+    document.getElementById('alertThreshold').textContent = data.alert_threshold.toFixed(1);
+}
+
 function updateAlerts(alerts) {
     const alertsList = document.getElementById('alertsList');
     alertsList.innerHTML = alerts.map(alert => {
@@ -182,17 +217,16 @@ document.querySelectorAll('.chart-controls button').forEach(button => {
         document.querySelectorAll('.chart-controls button').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         
-        try {
-            const history = await fetchWithDebug(`${API_BASE_URL}/api/temperature/history?timerange=${range}`, fetchOptions);
-            updateChart(history);
-        } catch (error) {
-            console.error(`Error fetching history for range ${range}:`, error);
-        }
+        await fetchChartData(range);
     });
 });
 
 // Initial load
 fetchData();
+fetchChartData();
 
-// Update every minute
-setInterval(fetchData, 60000); 
+// Update current temperature and stats every minute
+setInterval(fetchData, 60000);
+
+// Only fetch full chart data when changing time ranges
+// Remove the 5-minute interval for chart updates since we're updating incrementally 
