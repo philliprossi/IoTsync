@@ -35,7 +35,15 @@ body {
 
 .temp-display {
     font-size: 2.5rem;
+}
+
+.temp-line {
     font-weight: bold;
+}
+
+.temp-line:last-child {
+    font-weight: normal;
+    font-size: 1.8rem;
 }
 
 .stats-grid {
