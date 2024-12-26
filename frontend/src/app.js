@@ -1,32 +1,41 @@
 let chart;
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = window.env.API_URL || 'http://localhost:8000';
 
 const fetchOptions = {
     method: 'GET',
     mode: 'cors',
     headers: {
         'Accept': 'application/json',
-        'Origin': 'http://localhost:3000'
+        'Origin': window.location.origin
     },
     credentials: 'omit'
 };
 
 async function fetchWithDebug(url, options) {
     console.log(`Fetching ${url}...`);
+    console.log('API Base URL:', API_BASE_URL);
+    console.log('Full URL:', url);
+    console.log('Fetch options:', JSON.stringify(options, null, 2));
+    
     try {
         const response = await fetch(url, options);
         console.log(`Response status: ${response.status}`);
-        console.log(`Response headers:`, response.headers);
+        console.log('Response headers:', Object.fromEntries([...response.headers]));
         
         if (!response.ok) {
+            console.error(`HTTP error! status: ${response.status}`);
+            console.error('Response:', await response.text());
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log(`Data received:`, data);
+        console.log('Data received:', JSON.stringify(data, null, 2));
         return data;
     } catch (error) {
-        console.error(`Error fetching ${url}:`, error);
+        console.error('Detailed error information:');
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
         throw error;
     }
 }
@@ -57,7 +66,19 @@ async function fetchData() {
 function updateCurrentTemperature(data) {
     document.getElementById('currentTempC').textContent = data.temperature_c.toFixed(1);
     document.getElementById('currentTempF').textContent = data.temperature_f.toFixed(1);
-    document.getElementById('lastUpdate').textContent = new Date(data.timestamp).toLocaleString();
+    
+    // Convert UTC to EST
+    const utcDate = new Date(data.timestamp + 'Z'); // Ensure UTC parsing by adding 'Z'
+    document.getElementById('lastUpdate').textContent = utcDate.toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
 }
 
 function updateStats(data) {
@@ -76,7 +97,14 @@ function updateChart(data) {
     chart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: data.map(d => new Date(d.time).toLocaleTimeString()),
+            labels: data.map(d => {
+                const utcDate = new Date(d.time + 'Z'); // Ensure UTC parsing
+                return utcDate.toLocaleTimeString('en-US', {
+                    timeZone: 'America/New_York',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }),
             datasets: [{
                 label: 'Temperature (°C)',
                 data: data.map(d => d.temperature),
@@ -98,12 +126,24 @@ function updateChart(data) {
 
 function updateAlerts(alerts) {
     const alertsList = document.getElementById('alertsList');
-    alertsList.innerHTML = alerts.map(alert => `
-        <div class="alert-item">
-            <p>${alert.message}</p>
-            <p class="alert-time">${new Date(alert.timestamp).toLocaleString()}</p>
-        </div>
-    `).join('');
+    alertsList.innerHTML = alerts.map(alert => {
+        const utcDate = new Date(alert.timestamp + 'Z'); // Ensure UTC parsing
+        return `
+            <div class="alert-item">
+                <p>${alert.message}</p>
+                <p class="alert-time">${utcDate.toLocaleString('en-US', {
+                    timeZone: 'America/New_York',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                })}</p>
+            </div>
+        `;
+    }).join('');
 }
 
 // Event listeners for time range buttons
