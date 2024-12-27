@@ -82,3 +82,8 @@ exec "$@"' > /docker-entrypoint.sh && \
 # Set entrypoint
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"] 
+
+# Add these lines if they're not already present
+COPY frontend/src/manifest.json /usr/share/nginx/html/
+COPY frontend/src/service-worker.js /usr/share/nginx/html/
+COPY frontend/src/icons /usr/share/nginx/html/icons 
