@@ -476,7 +476,8 @@ docker-compose up -d
 3. Start ngrok with Google OAuth:
 ```bash
 # Replace ALERT_EMAIL with the email address from your .env file
-ngrok http --domain=your-domain.ngrok-free.app --oauth=google --oauth-allow-email=${ALERT_EMAIL} 3000
+# The port should match FRONTEND_PORT from your .env file (defaults to 3000)
+ngrok http --domain=your-domain.ngrok-free.app --oauth=google --oauth-allow-email=${ALERT_EMAIL} ${FRONTEND_PORT:-3000}
 ```
 
 This setup provides:
@@ -488,6 +489,7 @@ This setup provides:
 Notes:
 - The ALERT_EMAIL environment variable is used for both temperature alerts and ngrok OAuth access control
 - The application must be running before starting ngrok
+- The FRONTEND_PORT environment variable determines the port (defaults to 3000)
 - The free tier of ngrok includes:
   - Custom domain support
   - Google OAuth integration
