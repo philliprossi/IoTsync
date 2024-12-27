@@ -6,9 +6,10 @@ const fetchOptions = {
     mode: 'cors',
     headers: {
         'Accept': 'application/json',
-        'Origin': window.location.origin
+        'Origin': window.location.origin,
+        'ngrok-skip-browser-warning': 'true'
     },
-    credentials: 'omit'
+    credentials: 'same-origin'
 };
 
 async function fetchWithDebug(url, options) {
