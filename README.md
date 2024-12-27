@@ -447,3 +447,51 @@ The application stores data in a SQLite database (`data/iotsync.db`) with the fo
    - Check logs for email sending errors
    - Verify recipient email address is correct
    - Test SendGrid configuration in their web interface
+
+## Deployment Options
+
+### Option A: Local Network Only
+
+Start the services:
+```bash
+docker-compose up -d
+```
+
+Access the dashboard:
+- Open http://localhost:3000 in your browser
+
+### Option B: Secure Remote Access with ngrok
+
+1. Install ngrok:
+   - Visit [ngrok.com](https://ngrok.com) and sign up for a free account
+   - Download and install ngrok
+   - Configure your authtoken: `ngrok config add-authtoken YOUR_TOKEN`
+   - Reserve a domain in the ngrok dashboard (e.g., arriving-rich-unicorn.ngrok-free.app)
+
+2. Start the application:
+```bash
+docker-compose up -d
+```
+
+3. Start ngrok with Google OAuth:
+```bash
+# Replace ALERT_EMAIL with the email address from your .env file
+# The port should match FRONTEND_PORT from your .env file (defaults to 3000)
+ngrok http --domain=your-domain.ngrok-free.app --oauth=google --oauth-allow-email=${ALERT_EMAIL} ${FRONTEND_PORT:-3000}
+```
+
+This setup provides:
+- Secure HTTPS access from anywhere
+- Google OAuth authentication
+- Email-based access control (only the email specified in ALERT_EMAIL can access)
+- No VPN or port forwarding required
+
+Notes:
+- The ALERT_EMAIL environment variable is used for both temperature alerts and ngrok OAuth access control
+- The application must be running before starting ngrok
+- The FRONTEND_PORT environment variable determines the port (defaults to 3000)
+- The free tier of ngrok includes:
+  - Custom domain support
+  - Google OAuth integration
+  - 1 concurrent tunnel
+  - Rate limiting applies
