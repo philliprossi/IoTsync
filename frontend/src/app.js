@@ -53,10 +53,13 @@ async function fetchData() {
         
         // Add new data point to chart if it exists
         if (chart && current) {
-            const time = new Date(current.timestamp + 'Z').toLocaleTimeString('en-US', {
+            const time = new Date(current.timestamp + 'Z').toLocaleString('en-US', {
                 timeZone: 'America/New_York',
-                hour: '2-digit',
-                minute: '2-digit'
+                month: 'numeric',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
             });
             
             // Only add if it's a new timestamp
@@ -111,10 +114,13 @@ function initializeChart(data, alertThreshold) {
         data: {
             labels: data.map(d => {
                 const utcDate = new Date(d.time + 'Z'); // Ensure UTC parsing
-                return utcDate.toLocaleTimeString('en-US', {
+                return utcDate.toLocaleString('en-US', {
                     timeZone: 'America/New_York',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
                 });
             }),
             datasets: [{
@@ -155,6 +161,14 @@ function initializeChart(data, alertThreshold) {
                 }
             },
             scales: {
+                x: {
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45,
+                        autoSkip: true,
+                        maxTicksLimit: 12 // Show roughly one label per 2 hours for day view
+                    }
+                },
                 y: {
                     beginAtZero: false
                 }
