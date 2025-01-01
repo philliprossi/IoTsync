@@ -35,7 +35,7 @@ class Config:
     RETRY_DELAY = 5  # seconds
     
     # Alert Configuration
-    ALERT_MIN_POOL_TEMP_F = 101.0
+    ALERT_MIN_POOL_TEMP_F = 103.0
     ALERT_INTERVAL = 30  # minutes
     
     # Email Configuration
