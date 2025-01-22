@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email, To, Content
+from twilio.rest import Client
 from db_handler import DatabaseHandler
 
 class AlertManager:
@@ -18,11 +19,19 @@ class AlertManager:
         self.from_email = Config.SENDGRID_FROM_EMAIL
         self.alert_recipient = Config.ALERT_EMAIL
         
+        # SMS configuration
+        self.twilio_account_sid = Config.TWILIO_ACCOUNT_SID
+        self.twilio_auth_token = Config.TWILIO_AUTH_TOKEN
+        self.twilio_from_number = Config.TWILIO_FROM_NUMBER
+        self.alert_phone_number = Config.ALERT_PHONE_NUMBER
+        
         # Database handler
         self.db_handler = DatabaseHandler()
         
         if not all([self.sendgrid_api_key, self.from_email]):
-            self.logger.warning("SendGrid credentials not configured. Alerts will be logged only.")
+            self.logger.warning("SendGrid credentials not configured. Email alerts will be logged only.")
+        if not all([self.twilio_account_sid, self.twilio_auth_token, self.twilio_from_number]):
+            self.logger.warning("Twilio credentials not configured. SMS alerts will be logged only.")
     
     def should_send_alert(self):
         """Check if enough time has passed since the last alert."""
@@ -60,6 +69,30 @@ class AlertManager:
         
         return email_sent
     
+    def send_sms(self, body):
+        """Send an SMS alert using Twilio."""
+        sms_sent = False
+        if not all([self.twilio_account_sid, self.twilio_auth_token, self.twilio_from_number]):
+            self.logger.info(f"Would send SMS: {body}")
+            return sms_sent
+            
+        try:
+            client = Client(self.twilio_account_sid, self.twilio_auth_token)
+            message = client.messages.create(
+                body=body,
+                from_=self.twilio_from_number,
+                to=self.alert_phone_number
+            )
+            
+            if message.sid:
+                self.logger.info("Alert SMS sent")
+                sms_sent = True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to send alert SMS: {e}", exc_info=True)
+        
+        return sms_sent
+    
     def check_temperature(self, pool_temp_f):
         """Check pool temperature and send alerts if needed."""
         if pool_temp_f is None:
@@ -75,7 +108,11 @@ class AlertManager:
                        f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                 
                 email_sent = self.send_email(subject, body)
-                self.alert_active = True
+                sms_sent = self.send_sms(body)
+                
+                if email_sent or sms_sent:
+                    self.last_alert_time = datetime.now()
+                    self.alert_active = True
                 
                 # Log alert to database
                 self.db_handler.log_alert(
@@ -83,7 +120,9 @@ class AlertManager:
                     temperature_f=pool_temp_f,
                     threshold_f=self.min_pool_temp_f,
                     email_sent=email_sent,
+                    sms_sent=sms_sent,
                     email_recipient=self.alert_recipient,
+                    phone_recipient=self.alert_phone_number,
                     message=body
                 )
                 
@@ -96,14 +135,19 @@ class AlertManager:
                    f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
             email_sent = self.send_email(subject, body)
-            self.alert_active = False
+            sms_sent = self.send_sms(body)
             
-            # Log resolution to database
-            self.db_handler.log_alert(
-                alert_type='resolved',
-                temperature_f=pool_temp_f,
-                threshold_f=self.min_pool_temp_f,
-                email_sent=email_sent,
-                email_recipient=self.alert_recipient,
-                message=body
-            ) 
+            if email_sent or sms_sent:
+                self.alert_active = False
+                
+                # Log resolution to database
+                self.db_handler.log_alert(
+                    alert_type='resolved',
+                    temperature_f=pool_temp_f,
+                    threshold_f=self.min_pool_temp_f,
+                    email_sent=email_sent,
+                    sms_sent=sms_sent,
+                    email_recipient=self.alert_recipient,
+                    phone_recipient=self.alert_phone_number,
+                    message=body
+                ) 

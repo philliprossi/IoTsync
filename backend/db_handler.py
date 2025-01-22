@@ -11,6 +11,68 @@ class DatabaseHandler:
     def init_db(self):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
+            
+            # First, check if we need to migrate the temperature_alerts table
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='temperature_alerts'")
+            if cursor.fetchone() is not None:
+                # Table exists, check if we need to add new columns
+                cursor.execute("PRAGMA table_info(temperature_alerts)")
+                columns = [col[1] for col in cursor.fetchall()]
+                
+                # If sms_sent column doesn't exist, we need to recreate the table
+                if 'sms_sent' not in columns:
+                    # Rename existing table
+                    cursor.execute("ALTER TABLE temperature_alerts RENAME TO temperature_alerts_old")
+                    
+                    # Create new table with updated schema
+                    cursor.execute('''
+                        CREATE TABLE temperature_alerts (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            timestamp DATETIME NOT NULL,
+                            alert_type TEXT NOT NULL,
+                            temperature_f REAL NOT NULL,
+                            threshold_f REAL NOT NULL,
+                            email_sent BOOLEAN NOT NULL,
+                            sms_sent BOOLEAN NOT NULL,
+                            email_recipient TEXT,
+                            phone_recipient TEXT,
+                            message TEXT
+                        )
+                    ''')
+                    
+                    # Copy data from old table to new table
+                    cursor.execute('''
+                        INSERT INTO temperature_alerts 
+                        (timestamp, alert_type, temperature_f, threshold_f, 
+                         email_sent, sms_sent, email_recipient, phone_recipient, message)
+                        SELECT 
+                            timestamp, alert_type, temperature_f, threshold_f,
+                            email_sent, FALSE, email_recipient, NULL, message
+                        FROM temperature_alerts_old
+                    ''')
+                    
+                    # Drop old table
+                    cursor.execute("DROP TABLE temperature_alerts_old")
+                    
+                    conn.commit()
+            else:
+                # Create table if it doesn't exist
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS temperature_alerts (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        timestamp DATETIME NOT NULL,
+                        alert_type TEXT NOT NULL,
+                        temperature_f REAL NOT NULL,
+                        threshold_f REAL NOT NULL,
+                        email_sent BOOLEAN NOT NULL,
+                        sms_sent BOOLEAN NOT NULL,
+                        email_recipient TEXT,
+                        phone_recipient TEXT,
+                        message TEXT
+                    )
+                ''')
+            
+            # Create sensor_readings table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS sensor_readings (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,20 +93,6 @@ class DatabaseHandler:
                     outdoor_ch3_humidity INTEGER,
                     atmospheric_pressure REAL,
                     pressure_units TEXT
-                )
-            ''')
-            
-            # New alerts table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS temperature_alerts (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp DATETIME NOT NULL,
-                    alert_type TEXT NOT NULL,  -- 'triggered' or 'resolved'
-                    temperature_f REAL NOT NULL,
-                    threshold_f REAL NOT NULL,
-                    email_sent BOOLEAN NOT NULL,
-                    email_recipient TEXT,
-                    message TEXT
                 )
             ''')
             conn.commit()
@@ -96,27 +144,23 @@ class DatabaseHandler:
             ))
             conn.commit() 
 
-    def log_alert(self, alert_type, temperature_f, threshold_f, email_sent, email_recipient, message):
-        """Log temperature alert to database."""
+    def log_alert(self, alert_type, temperature_f, threshold_f, email_sent, sms_sent, email_recipient, phone_recipient, message):
+        """Log a temperature alert to the database."""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO temperature_alerts (
-                    timestamp,
-                    alert_type,
-                    temperature_f,
-                    threshold_f,
-                    email_sent,
-                    email_recipient,
-                    message
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO temperature_alerts 
+                (timestamp, alert_type, temperature_f, threshold_f, email_sent, sms_sent, email_recipient, phone_recipient, message)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 datetime.now().isoformat(),
                 alert_type,
                 temperature_f,
                 threshold_f,
                 email_sent,
+                sms_sent,
                 email_recipient,
+                phone_recipient,
                 message
             ))
-            conn.commit() 
+            conn.commit()

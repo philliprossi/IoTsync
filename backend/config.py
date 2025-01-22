@@ -43,6 +43,12 @@ class Config:
     SENDGRID_FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL')
     ALERT_EMAIL = os.getenv('ALERT_EMAIL')
     
+    # SMS Configuration
+    TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
+    TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
+    TWILIO_FROM_NUMBER = os.getenv('TWILIO_FROM_NUMBER')
+    ALERT_PHONE_NUMBER = os.getenv('ALERT_PHONE_NUMBER')
+    
     # Logging Configuration
     LOG_LEVEL = 'DEBUG'
     LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
