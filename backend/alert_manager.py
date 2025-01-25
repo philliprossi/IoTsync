@@ -13,6 +13,8 @@ class AlertManager:
         self.alert_interval = timedelta(minutes=Config.ALERT_INTERVAL)
         self.min_pool_temp_f = Config.ALERT_MIN_POOL_TEMP_F
         self.alert_active = False
+        self.stale_data_alert_active = False
+        self.max_data_age = timedelta(hours=8)
         
         # Email configuration
         self.sendgrid_api_key = Config.SENDGRID_API_KEY
@@ -93,8 +95,76 @@ class AlertManager:
         
         return sms_sent
     
+    def check_data_staleness(self):
+        """Check if data hasn't been updated in the last 8 hours."""
+        try:
+            latest_reading = self.db_handler.get_latest_reading()
+            if not latest_reading:
+                return
+            
+            last_update_time = latest_reading.get('timestamp')
+            if not last_update_time:
+                return
+                
+            time_since_update = datetime.now() - last_update_time
+            
+            if time_since_update >= self.max_data_age:
+                if not self.stale_data_alert_active and self.should_send_alert():
+                    subject = "IoT Sync Data Alert"
+                    body = (f"No data updates received in the last 8 hours!\n"
+                           f"Last update time: {last_update_time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                           f"Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                    
+                    email_sent = self.send_email(subject, body)
+                    sms_sent = self.send_sms(body)
+                    
+                    if email_sent or sms_sent:
+                        self.last_alert_time = datetime.now()
+                        self.stale_data_alert_active = True
+                    
+                    # Log alert to database
+                    self.db_handler.log_alert(
+                        alert_type='stale_data',
+                        temperature_f=None,
+                        threshold_f=None,
+                        email_sent=email_sent,
+                        sms_sent=sms_sent,
+                        email_recipient=self.alert_recipient,
+                        phone_recipient=self.alert_phone_number,
+                        message=body
+                    )
+            elif self.stale_data_alert_active:
+                # Data updates have resumed
+                subject = "IoT Sync Data Restored"
+                body = (f"Data updates have resumed.\n"
+                       f"Latest update time: {last_update_time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                       f"Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                
+                email_sent = self.send_email(subject, body)
+                sms_sent = self.send_sms(body)
+                
+                if email_sent or sms_sent:
+                    self.stale_data_alert_active = False
+                    
+                    # Log resolution to database
+                    self.db_handler.log_alert(
+                        alert_type='stale_data_resolved',
+                        temperature_f=None,
+                        threshold_f=None,
+                        email_sent=email_sent,
+                        sms_sent=sms_sent,
+                        email_recipient=self.alert_recipient,
+                        phone_recipient=self.alert_phone_number,
+                        message=body
+                    )
+        except Exception as e:
+            self.logger.error(f"Failed to check data staleness: {e}", exc_info=True)
+
     def check_temperature(self, pool_temp_f):
         """Check pool temperature and send alerts if needed."""
+        # First check for stale data
+        self.check_data_staleness()
+        
         if pool_temp_f is None:
             self.logger.warning("Pool temperature reading is None")
             return

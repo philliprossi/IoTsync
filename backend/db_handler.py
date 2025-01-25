@@ -164,3 +164,44 @@ class DatabaseHandler:
                 message
             ))
             conn.commit()
+
+    def get_latest_reading(self):
+        """Get the most recent sensor reading from the database."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT 
+                    timestamp,
+                    pool_temp_f,
+                    indoor_temp_f,
+                    indoor_humidity,
+                    outdoor_ch1_temp_f,
+                    outdoor_ch1_humidity,
+                    outdoor_ch2_temp_f,
+                    outdoor_ch2_humidity,
+                    outdoor_ch3_temp_f,
+                    outdoor_ch3_humidity,
+                    atmospheric_pressure,
+                    pressure_units
+                FROM sensor_readings 
+                ORDER BY timestamp DESC 
+                LIMIT 1
+            ''')
+            row = cursor.fetchone()
+            
+            if row:
+                return {
+                    'timestamp': datetime.fromisoformat(row[0]),
+                    'pool_temp_f': row[1],
+                    'indoor_temp_f': row[2],
+                    'indoor_humidity': row[3],
+                    'outdoor_ch1_temp_f': row[4],
+                    'outdoor_ch1_humidity': row[5],
+                    'outdoor_ch2_temp_f': row[6],
+                    'outdoor_ch2_humidity': row[7],
+                    'outdoor_ch3_temp_f': row[8],
+                    'outdoor_ch3_humidity': row[9],
+                    'atmospheric_pressure': row[10],
+                    'pressure_units': row[11]
+                }
+            return None
