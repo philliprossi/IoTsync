@@ -30,7 +30,7 @@ class Config:
     DEVICE_ID = os.getenv('DEVICE_ID')
     
     # Data Collection Settings
-    COLLECTION_INTERVAL = 55  # seconds
+    COLLECTION_INTERVAL = 30*60  # seconds
     MAX_RETRIES = 3
     RETRY_DELAY = 5  # seconds
     
